@@ -10,6 +10,11 @@ BUFFER_SIZE = 1024
 
 # Optional: register external visualizers or consumers
 spectrogram_updater = None
+volume_callback = None
+
+def set_volume_callback(func):
+    global volume_callback
+    volume_callback = func
 
 
 def set_spectrogram_callback(func):
@@ -22,6 +27,12 @@ def audio_callback(indata, frames, time, status):
         print(status, flush=True)
 
     mono = indata[:, 0]
+
+    # --- Volume ---
+    level = np.max(np.abs(indata))
+    if volume_callback:
+        volume_callback(level)
+
 
     # --- Pitch ---
     pitch = get_pitch(mono)
