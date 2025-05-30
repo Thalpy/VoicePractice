@@ -1,7 +1,7 @@
 import sys
 from PyQt5 import QtWidgets
 from overlay_gui import VoicePracticeOverlay
-from audio_stream import start_stream, set_spectrogram_callback
+from audio_stream import start_stream, set_spectrogram_callback, set_volume_callback
 import keyboard
 
 # Global toggle
@@ -17,6 +17,7 @@ def toggle_overlay():
         if not overlay_window:
             overlay_window = VoicePracticeOverlay()
             set_spectrogram_callback(overlay_window.get_spectrogram_updater())
+            set_volume_callback(overlay_window.update_volume)
         if not stream:
             stream = start_stream()
         overlay_window.show()
