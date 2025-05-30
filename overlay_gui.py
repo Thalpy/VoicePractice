@@ -1,8 +1,8 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 from spectrogram_visualisation import SpectrogramWidget
-from pitch_analysis import get_pitch_score
-from resonance_analysis import get_resonance_score
+from pitch_analysis import get_pitch_score, get_latest_pitch
+from resonance_analysis import get_resonance_score, get_latest_centroid
 from intonation_analysis import get_intonation_score
 import os
 import sounddevice as sd
@@ -23,6 +23,7 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
+        
 
         def create_label_with_icon(icon_name, fallback_text):
             label = QtWidgets.QLabel()
@@ -36,9 +37,24 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
             return label
 
         self.pitch_label = QtWidgets.QLabel("Pitch: ...")
+        self.pitch_value_label = QtWidgets.QLabel("Pitch: — Hz")
+        self.layout.addWidget(self.pitch_value_label)
+
         self.resonance_label = QtWidgets.QLabel("Resonance: ...")
+        self.resonance_value_label = QtWidgets.QLabel("Resonance: — Hz")
+        self.layout.addWidget(self.resonance_value_label)
+
         self.intonation_label = QtWidgets.QLabel("Intonation: ...")
-        self.device_label = QtWidgets.QLabel(f"Mic: {sd.default.device[0]}")
+        self.pitch_plot = pg.PlotWidget(title="Pitch (Hz)")
+        self.pitch_plot.setYRange(50, 400)
+        self.pitch_curve = self.pitch_plot.plot(pen='y')
+        self.layout.addWidget(self.pitch_plot)
+
+        self.pitch_history = []
+
+        input_device_index = sd.default.device[0]
+        device_name = sd.query_devices(input_device_index)['name']
+        self.device_label = QtWidgets.QLabel(f"Mic: {device_name}")
 
         for label in [self.pitch_label, self.resonance_label, self.intonation_label, self.device_label]:
             label.setStyleSheet("font-size: 16px; color: white;")
@@ -73,8 +89,19 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         into = get_intonation_score()
 
         self.pitch_label.setText(f"Pitch in range: {pitch:.1f}%")
+        current_pitch = get_latest_pitch()
+        self.pitch_value_label.setText(f"Current pitch: {current_pitch:.1f} Hz")
+
         self.resonance_label.setText(f"Resonance in range: {res:.1f}%")
+        centroid = get_latest_centroid()
+        self.resonance_value_label.setText(f"Current resonance: {centroid:.0f} Hz")
+
         self.intonation_label.setText(f"Intonation healthy: {into:.1f}%")
+        self.pitch_history.append(current_pitch)
+        if len(self.pitch_history) > 100:
+            self.pitch_history.pop(0)
+        self.pitch_curve.setData(self.pitch_history)
+
 
     def get_spectrogram_updater(self):
         return self.spectrogram.update_spectrogram

@@ -44,5 +44,9 @@ def get_pitch_score():
     in_range = [1 for (_, p) in _pitch_buffer if TARGET_MIN <= p <= TARGET_MAX]
     return 100.0 * sum(in_range) / len(_pitch_buffer)
 
+def get_latest_pitch():
+    return _pitch_buffer[-1][1] if _pitch_buffer else 0.0
+
+
 def is_pitch_in_range(pitch):
     return TARGET_MIN <= pitch <= TARGET_MAX
