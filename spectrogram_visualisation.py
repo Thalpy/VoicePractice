@@ -1,7 +1,6 @@
 import numpy as np
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtWidgets, QtCore  # ✅ This is the fix
-import time
+from pyqtgraph.Qt import QtWidgets, QtCore
 
 SAMPLE_RATE = 22050
 WINDOW_SIZE = 1024
@@ -13,8 +12,8 @@ class SpectrogramWidget(pg.GraphicsLayoutWidget):
         super().__init__(parent)
         self.setWindowTitle("Spectrogram")
         self.setBackground('w')
-        
 
+        # Main plot
         self.plot = self.addPlot()
         self.img = pg.ImageItem()
         self.plot.addItem(self.img)
@@ -23,18 +22,18 @@ class SpectrogramWidget(pg.GraphicsLayoutWidget):
         self.plot.setLabel('left', 'Frequency', units='Hz')
         self.plot.setLabel('bottom', 'Time', units='s')
 
+        # Colormap
         self.cmap = pg.colormap.get('inferno')
         self.img.setLookupTable(self.cmap.getLookupTable(nPts=256))
 
-
+        # Rolling buffer of spectrogram slices
         self.img_array = np.zeros((WINDOW_SIZE // 2 + 1, DISPLAY_SECONDS * 100), dtype=np.float32)
 
-        # Resonance Target Zone (2.5–3.5 kHz)
+        # Reference overlays
         self.target_band = pg.LinearRegionItem(values=(2500, 3500), orientation=pg.LinearRegionItem.Horizontal, brush=(50, 200, 50, 50))
         self.target_band.setMovable(False)
         self.plot.addItem(self.target_band)
 
-        # Optional: Pitch Range (165–255 Hz)
         self.pitch_band = pg.LinearRegionItem(values=(165, 255), orientation=pg.LinearRegionItem.Horizontal, brush=(200, 100, 0, 40))
         self.pitch_band.setMovable(False)
         self.plot.addItem(self.pitch_band)
@@ -47,40 +46,37 @@ class SpectrogramWidget(pg.GraphicsLayoutWidget):
         pitch_label.setPos(0.1, 265)
         self.plot.addItem(pitch_label)
 
-        #noise
+        # Noise floor modeling
         self.noise_floor_db = np.zeros(WINDOW_SIZE // 2 + 1, dtype=np.float32)
         self.noise_update_count = 0
 
-
     def update_spectrogram(self, audio_frame, is_silent=False):
+        """
+        Update the spectrogram with a new frame of audio.
+        If silent, update the noise model instead.
+        """
         spectrum = np.abs(np.fft.rfft(audio_frame))
         spectrum_db = 20 * np.log10(spectrum + 1e-6).astype(np.float32)
 
-        #Noise
-        # Compute spectrum
-        spectrum = np.abs(np.fft.rfft(audio_frame))
-        spectrum_db = 20 * np.log10(spectrum + 1e-6).astype(np.float32)
-
-        # Update noise floor if silent
         if is_silent:
+            # Update rolling noise model
             self.noise_floor_db = (
                 self.noise_floor_db * self.noise_update_count + spectrum_db
             ) / (self.noise_update_count + 1)
             self.noise_update_count += 1
 
-        # Subtract noise floor
+        # Subtract noise floor and clamp
         adjusted_db = spectrum_db - self.noise_floor_db
-        adjusted_db = np.clip(adjusted_db, a_min=-40, a_max=60)  # avoid excessive negative
+        adjusted_db = np.clip(adjusted_db, a_min=-40, a_max=60)
 
-        # Scroll the image buffer
+        # Scroll image buffer
         self.img_array = np.roll(self.img_array, -1, axis=1)
         self.img_array[:, -1] = adjusted_db[:self.img_array.shape[0]]
 
-        # Update display
+        # Display updated spectrogram
         self.img.setImage(self.img_array.T, autoLevels=False,
-                        levels=(np.min(self.img_array), np.max(self.img_array)))
+                          levels=(np.min(self.img_array), np.max(self.img_array)))
         self.img.setRect(QtCore.QRectF(0, 0, DISPLAY_SECONDS, 8000))
-
 
     def start(self):
         timer = QtCore.QTimer()
@@ -89,4 +85,4 @@ class SpectrogramWidget(pg.GraphicsLayoutWidget):
         self.timer = timer
 
     def redraw(self):
-        pass
+        pass  # Hook for future animation or refresh logic
