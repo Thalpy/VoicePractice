@@ -35,4 +35,5 @@ def get_resonance_score():
     return 100.0 * in_range_count / len(_resonance_buffer)
 
 def get_latest_centroid():
-    return _latest_centroid
+    return _latest_centroid if _latest_centroid else np.nan
+

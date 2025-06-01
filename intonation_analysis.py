@@ -39,4 +39,5 @@ def get_intonation_score():
     return 100.0 * sum(1 for (_, ok) in _intonation_windows if ok) / len(_intonation_windows)
 
 def get_latest_std():
-    return _latest_std
+    return _latest_std if not np.isnan(_latest_std) else np.nan
+

@@ -158,7 +158,11 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.intonation_curve.setData(self.time_history, self.intonation_std_history)
 
     def get_spectrogram_updater(self):
-        return self.spectrogram.update_spectrogram
+        def conditional_update(audio, is_silent=False):
+            if self.spectrogram.isVisible():
+                self.spectrogram.update_spectrogram(audio, is_silent)
+        return conditional_update
+
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
