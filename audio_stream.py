@@ -11,6 +11,7 @@ BUFFER_SIZE = 1024
 # Optional: register external visualizers or consumers
 spectrogram_updater = None
 volume_callback = None
+volume_threshold = 10  # Default fallback
 
 def set_volume_callback(func):
     global volume_callback
@@ -49,8 +50,12 @@ def audio_callback(indata, frames, time, status):
 
     # --- Spectrogram ---
     if spectrogram_updater:
-        spectrogram_updater(mono)
+        is_silent = level * 100 < volume_threshold  # you'll need to store threshold
+        spectrogram_updater(mono, is_silent)
 
+def set_volume_threshold(threshold):
+    global volume_threshold
+    volume_threshold = threshold
 
 def start_stream():
     stream = sd.InputStream(

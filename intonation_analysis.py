@@ -11,6 +11,7 @@ INTONATION_MAX_STD = 25.0  # Hz
 # Internal pitch history
 _pitch_history = []  # List of (timestamp, pitch)
 _intonation_windows = []  # List of (timestamp, in_range)
+_latest_std = 0.0
 
 def update_pitch_history(pitch, timestamp=None):
     global _pitch_history
@@ -42,8 +43,14 @@ def evaluate_intonation(timestamp=None):
     cutoff_60s = timestamp - ROLLING_WINDOW_SECONDS
     _intonation_windows = [(t, r) for (t, r) in _intonation_windows if t >= cutoff_60s]
 
+    std_dev = np.std(window_pitches)
+    _latest_std = std_dev
+
 def get_intonation_score():
     if not _intonation_windows:
         return 0.0
     in_range_count = sum(1 for (_, ok) in _intonation_windows if ok)
     return 100.0 * in_range_count / len(_intonation_windows)
+
+def get_latest_std():
+    return _latest_std

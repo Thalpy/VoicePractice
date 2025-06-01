@@ -3,7 +3,8 @@ import pyqtgraph as pg
 from spectrogram_visualisation import SpectrogramWidget
 from pitch_analysis import get_pitch_score, get_latest_pitch
 from resonance_analysis import get_resonance_score, get_latest_centroid
-from intonation_analysis import get_intonation_score
+from intonation_analysis import get_intonation_score, get_latest_std
+from audio_stream import set_volume_threshold
 import os
 import sounddevice as sd
 import numpy as np
@@ -21,11 +22,44 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
-        self.setGeometry(100, 100, 600, 600)
-
+        self.setGeometry(100, 100, 1000, 1000)
         self.drag_position = None
+
+        # Create layout FIRST
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
+
+        # Top draggable bar
+        self.drag_bar = QtWidgets.QLabel()
+        self.drag_bar.setFixedHeight(30)
+        self.drag_bar.setStyleSheet("background-color: rgba(255, 255, 255, 30);")
+        self.layout.addWidget(self.drag_bar)
+
+        # Resonance Plot
+        self.resonance_plot = pg.PlotWidget(title="Resonance (Centroid Hz)")
+        self.resonance_plot.setYRange(1000, 5000)
+        self.resonance_plot.setLimits(xMin=-10, xMax=0, yMin=1000, yMax=5000)
+        self.resonance_plot.setMouseEnabled(x=False, y=False)
+        self.resonance_plot.getAxis("bottom").setLabel(text="Time (s)")
+        self.resonance_plot.addLine(y=2500, pen=pg.mkPen('c', width=1, style=QtCore.Qt.DashLine))
+        self.resonance_plot.addLine(y=3500, pen=pg.mkPen('c', width=1, style=QtCore.Qt.DashLine))
+        self.resonance_curve = self.resonance_plot.plot(pen='m')
+
+        self.resonance_history = [np.nan] * MAX_HISTORY
+        self.layout.addWidget(self.resonance_plot)
+
+        # Intonation Plot (Standard Deviation of Pitch)
+        self.intonation_plot = pg.PlotWidget(title="Intonation (Pitch Std Dev)")
+        self.intonation_plot.setYRange(0, 50)
+        self.intonation_plot.setLimits(xMin=-10, xMax=0, yMin=0, yMax=50)
+        self.intonation_plot.setMouseEnabled(x=False, y=False)
+        self.intonation_plot.getAxis("bottom").setLabel(text="Time (s)")
+        self.intonation_plot.addLine(y=15, pen=pg.mkPen('y', width=1, style=QtCore.Qt.DashLine))
+        self.intonation_plot.addLine(y=25, pen=pg.mkPen('y', width=1, style=QtCore.Qt.DashLine))
+        self.intonation_curve = self.intonation_plot.plot(pen='c')
+
+        self.intonation_std_history = [np.nan] * MAX_HISTORY
+        self.layout.addWidget(self.intonation_plot)
 
         def create_label_with_icon(icon_name, fallback_text):
             container = QtWidgets.QHBoxLayout()
@@ -93,6 +127,9 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.layout.addWidget(self.volume_slider)
         self.layout.addWidget(self.volume_bar)
 
+        self.volume_slider.valueChanged.connect(lambda v: set_volume_threshold(v))
+        set_volume_threshold(self.volume_slider.value())
+
         input_device_index = sd.default.device[0]
         device_name = sd.query_devices(input_device_index)['name']
         self.device_label = QtWidgets.QLabel(f"Mic: {device_name}")
@@ -125,14 +162,15 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
 
         input_level = self.latest_volume
         self.volume_bar.setValue(input_level)
+        is_silent = input_level < threshold
 
-        if input_level < threshold:
-            pitch = np.nan
+        if is_silent:
+            pitch = np.nan        
+        self.spectrogram.update_spectrogram(audio_frame=..., is_silent=is_silent)
 
         self.pitch_label.setText(f"Pitch: {pitch_score:.1f}%")
         self.pitch_value_label.setText(f"{pitch:.1f} Hz" if not np.isnan(pitch) else "—")
         self.resonance_label.setText(f"Resonance: {res_score:.1f}%")
-        self.resonance_value_label.setText(f"{centroid:.0f} Hz")
         self.intonation_label.setText(f"Intonation: {into_score:.1f}%")
         self.intonation_value_label.setText(f"{into_score:.1f}%")
 
@@ -140,15 +178,41 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.pitch_history.append(pitch)
         self.pitch_curve.setData(self.time_history, self.pitch_history)
 
+        self.resonance_history.pop(0)
+        self.resonance_history.append(centroid if input_level >= threshold else np.nan)
+        self.resonance_curve.setData(self.time_history, self.resonance_history)
+
+        if 2500 <= centroid <= 3500:
+            self.resonance_value_label.setText(f"{centroid:.0f} Hz ✅")
+        else:
+            self.resonance_value_label.setText(f"{centroid:.0f} Hz ❌")
+
+        std_dev = get_latest_std()
+
+        self.intonation_std_history.pop(0)
+        self.intonation_std_history.append(std_dev if input_level >= threshold else np.nan)
+        self.intonation_curve.setData(self.time_history, self.intonation_std_history)
+
+        if 15 <= std_dev <= 25:
+            self.intonation_value_label.setText(f"{std_dev:.1f} Hz ✅")
+        else:
+            self.intonation_value_label.setText(f"{std_dev:.1f} Hz ❌")
+
+        self.intonation_label.setText(f"Intonation: {into_score:.1f}%")
+
+
     def get_spectrogram_updater(self):
         return self.spectrogram.update_spectrogram
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
-            event.accept()
+            widget = self.childAt(event.pos())
+            if widget == self.drag_bar:
+                self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+                event.accept()
 
     def mouseMoveEvent(self, event):
         if event.buttons() == QtCore.Qt.LeftButton and self.drag_position:
             self.move(event.globalPos() - self.drag_position)
             event.accept()
+

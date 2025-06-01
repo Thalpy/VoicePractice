@@ -29,15 +29,54 @@ class SpectrogramWidget(pg.GraphicsLayoutWidget):
 
         self.img_array = np.zeros((WINDOW_SIZE // 2 + 1, DISPLAY_SECONDS * 100), dtype=np.float32)
 
-    def update_spectrogram(self, audio_frame):
+        # Resonance Target Zone (2.5–3.5 kHz)
+        self.target_band = pg.LinearRegionItem(values=(2500, 3500), orientation=pg.LinearRegionItem.Horizontal, brush=(50, 200, 50, 50))
+        self.target_band.setMovable(False)
+        self.plot.addItem(self.target_band)
+
+        # Optional: Pitch Range (165–255 Hz)
+        self.pitch_band = pg.LinearRegionItem(values=(165, 255), orientation=pg.LinearRegionItem.Horizontal, brush=(200, 100, 0, 40))
+        self.pitch_band.setMovable(False)
+        self.plot.addItem(self.pitch_band)
+
+        resonance_label = pg.TextItem(text="🎯 Mask Resonance Target", color='g')
+        resonance_label.setPos(0.1, 3600)
+        self.plot.addItem(resonance_label)
+
+        pitch_label = pg.TextItem(text="Pitch Range", color='orange')
+        pitch_label.setPos(0.1, 265)
+        self.plot.addItem(pitch_label)
+
+        #noise
+        self.noise_floor_db = np.zeros(WINDOW_SIZE // 2 + 1, dtype=np.float32)
+        self.noise_update_count = 0
+
+
+    def update_spectrogram(self, audio_frame, is_silent=False):
         spectrum = np.abs(np.fft.rfft(audio_frame))
         spectrum_db = 20 * np.log10(spectrum + 1e-6).astype(np.float32)
 
-        # Transpose the buffer to scroll horizontally
-        self.img_array = np.roll(self.img_array, -1, axis=1)
-        self.img_array[:, -1] = spectrum_db[:self.img_array.shape[0]]
+        #Noise
+        # Compute spectrum
+        spectrum = np.abs(np.fft.rfft(audio_frame))
+        spectrum_db = 20 * np.log10(spectrum + 1e-6).astype(np.float32)
 
-        # Better color levels and orientation
+        # Update noise floor if silent
+        if is_silent:
+            self.noise_floor_db = (
+                self.noise_floor_db * self.noise_update_count + spectrum_db
+            ) / (self.noise_update_count + 1)
+            self.noise_update_count += 1
+
+        # Subtract noise floor
+        adjusted_db = spectrum_db - self.noise_floor_db
+        adjusted_db = np.clip(adjusted_db, a_min=-40, a_max=60)  # avoid excessive negative
+
+        # Scroll the image buffer
+        self.img_array = np.roll(self.img_array, -1, axis=1)
+        self.img_array[:, -1] = adjusted_db[:self.img_array.shape[0]]
+
+        # Update display
         self.img.setImage(self.img_array.T, autoLevels=False,
                         levels=(np.min(self.img_array), np.max(self.img_array)))
         self.img.setRect(QtCore.QRectF(0, 0, DISPLAY_SECONDS, 8000))
