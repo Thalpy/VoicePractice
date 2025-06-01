@@ -6,3 +6,4 @@ matplotlib>=3.5             # Optional: visualizing spectrograms
 pyqt5>=5.15                 # GUI overlay
 pyqtgraph>=0.13             # Real-time waveform and spectrogram UI
 keyboard>=0.13              # Hotkey support (for calibration/test toggles)
+openai-whisper

@@ -2,7 +2,6 @@
 print('preprocessing.py: dir() -> ', dir())
 print('preprocessing.py: __name__ -> ', __name__)
 import subprocess, os, glob, shutil
-import magic
 
 from . import settings as settings_module
 
@@ -12,7 +11,6 @@ def process(uploaded_file, transcript, tmp_dir):
 	################## Noise Removal ##################
 
 	os.mkdir(tmp_dir)
-	filetype = magic.from_buffer(uploaded_file)
 
 	input_file    = tmp_dir + '/orig'
 	format_file   = tmp_dir + '/format.wav'

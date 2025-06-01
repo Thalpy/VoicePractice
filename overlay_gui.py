@@ -9,13 +9,17 @@ from pitch_analysis import get_pitch_score, get_latest_pitch
 from resonance_analysis import get_resonance_score, get_latest_centroid
 from intonation_analysis import get_intonation_score, get_latest_std
 from audio_stream import set_volume_threshold
+from phoneme_scatter_plot import PhonemeScatterPlotWidget
+# result_queue will be passed to the class at runtime
+
 
 SAMPLE_RATE = 10
 MAX_HISTORY = SAMPLE_RATE * 10
 
 class VoicePracticeOverlay(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, result_queue):
         super().__init__()
+        self.result_queue = result_queue
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint | QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
@@ -23,7 +27,7 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
 
         self.drag_position = None
         self.latest_volume = 0
-        self.show_spectrogram = True
+        self.show_spectrogram = False
 
         # === Layout ===
         self.layout = QtWidgets.QVBoxLayout()
@@ -97,19 +101,28 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
 
         # --- Spectrogram Toggle ---
         self.spectrogram_toggle = QtWidgets.QCheckBox("Show Spectrogram")
-        self.spectrogram_toggle.setChecked(True)
+        self.spectrogram_toggle.setChecked(False)
         self.spectrogram_toggle.stateChanged.connect(self.toggle_spectrogram)
         self.layout.addWidget(self.spectrogram_toggle)
 
         # --- Spectrogram Widget ---
         self.spectrogram = SpectrogramWidget()
         self.layout.addWidget(self.spectrogram)
+        self.spectrogram.setVisible(False)
 
-        # --- Timer for Updates ---
+        # --- Phoneme Scatter Plot ---
+        self.scatter_plot = PhonemeScatterPlotWidget()
+        self.layout.addWidget(self.scatter_plot)
+
+        # --- Timers ---
         self.time_history = np.linspace(-10, 0, MAX_HISTORY).tolist()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_indicators)
         self.timer.start(100)
+
+        self.poll_timer = QtCore.QTimer()
+        self.poll_timer.timeout.connect(self.poll_results)
+        self.poll_timer.start(200)
 
     def toggle_spectrogram(self, state):
         self.spectrogram.setVisible(bool(state))
@@ -136,11 +149,9 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.volume_bar.setValue(input_level)
         self.volume_bar.setStyleSheet(f"QProgressBar::chunk {{ background-color: {'green' if not is_silent else 'gold'}; }}")
 
-        # Update Spectrogram
         if self.spectrogram.isVisible():
-            self.spectrogram.update_spectrogram(audio_frame=np.zeros(1024), is_silent=is_silent)  # Placeholder
+            self.spectrogram.update_spectrogram(audio_frame=np.zeros(1024), is_silent=is_silent)
 
-        # Update Graphs
         self.pitch_plot.setTitle(f"Pitch (Hz) — {pitch_score:.1f}% | {pitch:.1f} Hz")
         self.resonance_plot.setTitle(f"Resonance — {res_score:.1f}% | {centroid:.0f} Hz")
         self.intonation_plot.setTitle(f"Intonation — {into_score:.1f}% | {std_dev:.1f} Hz")
@@ -157,12 +168,16 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.intonation_std_history.append(std_dev if not is_silent else np.nan)
         self.intonation_curve.setData(self.time_history, self.intonation_std_history)
 
+    def poll_results(self):
+        if not self.result_queue.empty():
+            result = self.result_queue.get()
+            self.scatter_plot.update_plot(result['phonemes'], result['medianPitch'], result['medianResonance'])
+
     def get_spectrogram_updater(self):
         def conditional_update(audio, is_silent=False):
             if self.spectrogram.isVisible():
                 self.spectrogram.update_spectrogram(audio, is_silent)
         return conditional_update
-
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
