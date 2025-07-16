@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Practice - Web Version</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -39,18 +41,85 @@
             backdrop-filter: blur(10px);
         }
         
-        .charts-container {
+        .visualizations-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
         
-        .chart-container {
+        .visualization-panel {
             background: rgba(255,255,255,0.1);
-            padding: 20px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s ease;
+        }
+        
+        .panel-header:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .panel-header h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        
+        .panel-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            font-size: 0.8em;
+            color: #4CAF50;
+            transition: color 0.3s ease;
+        }
+        
+        .status-indicator.inactive {
+            color: #666;
+        }
+        
+        .collapse-icon {
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+        
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .panel-content {
+            padding: 20px;
+            max-height: 500px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .panel-content.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+        }
+        
+        .chart-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 5px;
+            font-size: 0.9em;
+            text-align: center;
         }
         
         .stats {
@@ -172,14 +241,107 @@
             </div>
         </div>
         
-        <div class="charts-container">
-            <div class="chart-container">
-                <h3>Pitch Over Time</h3>
-                <canvas id="pitchChart"></canvas>
+        <div class="visualizations-container">
+            <!-- Pitch Visualization Panel -->
+            <div class="visualization-panel" data-chart="pitch">
+                <div class="panel-header" onclick="togglePanel('pitch')">
+                    <h3>🎵 Pitch Analysis</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="pitch-status">●</span>
+                        <span class="collapse-icon" id="pitch-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="pitch-content">
+                    <canvas id="pitchChart"></canvas>
+                    <div class="chart-info">
+                        <span>Target: 165-255 Hz | Current: <span id="currentPitch">--</span> Hz</span>
+                    </div>
+                </div>
             </div>
-            <div class="chart-container">
-                <h3>Volume Over Time</h3>
-                <canvas id="volumeChart"></canvas>
+
+            <!-- Volume Visualization Panel -->
+            <div class="visualization-panel" data-chart="volume">
+                <div class="panel-header" onclick="togglePanel('volume')">
+                    <h3>📊 Volume Analysis</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="volume-status">●</span>
+                        <span class="collapse-icon" id="volume-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="volume-content">
+                    <canvas id="volumeChart"></canvas>
+                    <div class="chart-info">
+                        <span>Optimal: 0.1-0.8 | Current: <span id="currentVolume">--</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resonance Visualization Panel -->
+            <div class="visualization-panel" data-chart="resonance">
+                <div class="panel-header" onclick="togglePanel('resonance')">
+                    <h3>🎭 Resonance Analysis</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="resonance-status">●</span>
+                        <span class="collapse-icon" id="resonance-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="resonance-content">
+                    <canvas id="resonanceChart"></canvas>
+                    <div class="chart-info">
+                        <span>Target: 2500-3500 Hz | Current: <span id="currentResonance">--</span> Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Intonation Visualization Panel -->
+            <div class="visualization-panel" data-chart="intonation">
+                <div class="panel-header" onclick="togglePanel('intonation')">
+                    <h3>🎶 Intonation Analysis</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="intonation-status">●</span>
+                        <span class="collapse-icon" id="intonation-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content" id="intonation-content">
+                    <canvas id="intonationChart"></canvas>
+                    <div class="chart-info">
+                        <span>Target: 15-25 Hz std | Current: <span id="currentIntonation">--</span> Hz</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spectrogram Visualization Panel -->
+            <div class="visualization-panel" data-chart="spectrogram">
+                <div class="panel-header" onclick="togglePanel('spectrogram')">
+                    <h3>🌈 Spectrogram</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="spectrogram-status">●</span>
+                        <span class="collapse-icon" id="spectrogram-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content collapsed" id="spectrogram-content">
+                    <canvas id="spectrogramCanvas" width="800" height="300"></canvas>
+                    <div class="chart-info">
+                        <span>Real-time frequency analysis | 0-8000 Hz range</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phoneme Scatter Plot Panel -->
+            <div class="visualization-panel" data-chart="phonemes">
+                <div class="panel-header" onclick="togglePanel('phonemes')">
+                    <h3>🗣️ Phoneme Analysis</h3>
+                    <div class="panel-controls">
+                        <span class="status-indicator" id="phonemes-status">●</span>
+                        <span class="collapse-icon" id="phonemes-icon">▼</span>
+                    </div>
+                </div>
+                <div class="panel-content collapsed" id="phonemes-content">
+                    <canvas id="phonemeChart"></canvas>
+                    <div class="chart-info">
+                        <span>Pitch vs Resonance clustering | <span id="phonemeCount">0</span> phonemes detected</span>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -211,8 +373,416 @@
         let audioContext;
         let analyser;
         let dataArray;
+        let timeDataArray;
         let isRecording = false;
         let updateInterval;
+        
+        // Enhanced audio analysis engine
+        class AudioAnalysisEngine {
+            constructor() {
+                this.pitchHistory = [];
+                this.maxHistory = 100;
+                this.sampleRate = 44100;
+                this.fftSize = 2048;
+                this.smoothingFactor = 0.8;
+                
+                // Initialize analysis buffers
+                this.previousPitch = 0;
+                this.pitchConfidence = 0;
+            }
+            
+            // Enhanced pitch detection using autocorrelation
+            calculatePitch(timeData) {
+                const minPeriod = Math.floor(this.sampleRate / 800); // ~800 Hz max
+                const maxPeriod = Math.floor(this.sampleRate / 50);  // ~50 Hz min
+                
+                let bestCorrelation = 0;
+                let bestPeriod = 0;
+                
+                // Autocorrelation for pitch detection
+                for (let period = minPeriod; period < maxPeriod && period < timeData.length / 2; period++) {
+                    let correlation = 0;
+                    for (let i = 0; i < timeData.length - period; i++) {
+                        correlation += timeData[i] * timeData[i + period];
+                    }
+                    
+                    if (correlation > bestCorrelation) {
+                        bestCorrelation = correlation;
+                        bestPeriod = period;
+                    }
+                }
+                
+                if (bestPeriod === 0) return 0;
+                
+                const pitch = this.sampleRate / bestPeriod;
+                this.pitchConfidence = bestCorrelation / (timeData.length - bestPeriod);
+                
+                // Smooth the pitch to reduce jitter
+                if (this.previousPitch > 0) {
+                    const smoothedPitch = this.smoothingFactor * this.previousPitch + 
+                                        (1 - this.smoothingFactor) * pitch;
+                    this.previousPitch = smoothedPitch;
+                    return smoothedPitch;
+                } else {
+                    this.previousPitch = pitch;
+                    return pitch;
+                }
+            }
+            
+            // Calculate volume with RMS
+            calculateVolume(timeData) {
+                let sum = 0;
+                for (let i = 0; i < timeData.length; i++) {
+                    sum += timeData[i] * timeData[i];
+                }
+                return Math.sqrt(sum / timeData.length);
+            }
+            
+            // Calculate spectral centroid for resonance analysis
+            calculateSpectralCentroid(frequencyData) {
+                let numerator = 0;
+                let denominator = 0;
+                
+                for (let i = 1; i < frequencyData.length; i++) {
+                    const frequency = (i * this.sampleRate) / (2 * frequencyData.length);
+                    const magnitude = frequencyData[i];
+                    numerator += frequency * magnitude;
+                    denominator += magnitude;
+                }
+                
+                return denominator > 0 ? numerator / denominator : 0;
+            }
+            
+            // Calculate pitch standard deviation for intonation analysis
+            calculateIntonation() {
+                if (this.pitchHistory.length < 10) return 0;
+                
+                const recentPitches = this.pitchHistory.slice(-50); // Last 5 seconds at 10Hz
+                const validPitches = recentPitches.filter(p => p > 50 && p < 800);
+                
+                if (validPitches.length < 5) return 0;
+                
+                const mean = validPitches.reduce((a, b) => a + b) / validPitches.length;
+                const variance = validPitches.reduce((sum, pitch) => 
+                    sum + Math.pow(pitch - mean, 2), 0) / validPitches.length;
+                
+                return Math.sqrt(variance);
+            }
+            
+            // Basic phoneme detection using formant analysis
+            detectBasicPhonemes(pitch, resonance, volume) {
+                if (volume < 0.01 || pitch < 50) {
+                    return { phoneme: 'silence', confidence: 0.9 };
+                }
+                
+                // Very basic phoneme classification
+                if (pitch > 200 && resonance > 3000) {
+                    return { phoneme: 'i/e', confidence: 0.6 };
+                } else if (pitch > 200 && resonance < 2500) {
+                    return { phoneme: 'u/o', confidence: 0.6 };
+                } else if (pitch < 150 && resonance > 2000 && resonance < 3000) {
+                    return { phoneme: 'a', confidence: 0.5 };
+                } else if (pitch < 100) {
+                    return { phoneme: 'consonant', confidence: 0.4 };
+                } else {
+                    return { phoneme: 'vowel', confidence: 0.3 };
+                }
+            }
+            
+            // Main analysis function
+            analyzeAudio(timeData, frequencyData) {
+                // Convert Uint8Array to Float32Array for better precision
+                const floatTimeData = new Float32Array(timeData.length);
+                const floatFreqData = new Float32Array(frequencyData.length);
+                
+                for (let i = 0; i < timeData.length; i++) {
+                    floatTimeData[i] = (timeData[i] - 128) / 128.0;
+                }
+                
+                for (let i = 0; i < frequencyData.length; i++) {
+                    floatFreqData[i] = frequencyData[i] / 255.0;
+                }
+                
+                const pitch = this.calculatePitch(floatTimeData);
+                const volume = this.calculateVolume(floatTimeData);
+                const resonance = this.calculateSpectralCentroid(floatFreqData);
+                
+                // Update pitch history
+                this.pitchHistory.push(pitch);
+                if (this.pitchHistory.length > this.maxHistory) {
+                    this.pitchHistory.shift();
+                }
+                
+                const intonation = this.calculateIntonation();
+                const phoneme = this.detectBasicPhonemes(pitch, resonance, volume);
+                
+                return {
+                    timestamp: Date.now(),
+                    pitch: pitch,
+                    volume: volume,
+                    resonance: resonance,
+                    intonation: intonation,
+                    spectrum: floatFreqData,
+                    phoneme: phoneme,
+                    isVoiced: volume > 0.01 && pitch > 50,
+                    confidence: this.pitchConfidence
+                };
+            }
+        }
+        
+        // Initialize the enhanced audio engine
+        const audioEngine = new AudioAnalysisEngine();
+        
+        // Visualization Manager for collapsible panels
+        class VisualizationManager {
+            constructor() {
+                this.panelStates = {
+                    pitch: { collapsed: false, enabled: true },
+                    volume: { collapsed: false, enabled: true },
+                    resonance: { collapsed: false, enabled: true },
+                    intonation: { collapsed: false, enabled: true },
+                    spectrogram: { collapsed: true, enabled: false },
+                    phonemes: { collapsed: true, enabled: false }
+                };
+                this.loadState();
+            }
+            
+            togglePanel(chartId) {
+                const content = document.getElementById(`${chartId}-content`);
+                const icon = document.getElementById(`${chartId}-icon`);
+                const status = document.getElementById(`${chartId}-status`);
+                
+                if (content && icon) {
+                    const isCollapsed = content.classList.contains('collapsed');
+                    
+                    if (isCollapsed) {
+                        // Expand
+                        content.classList.remove('collapsed');
+                        icon.classList.remove('collapsed');
+                        this.panelStates[chartId].collapsed = false;
+                        this.panelStates[chartId].enabled = true;
+                        if (status) status.classList.remove('inactive');
+                    } else {
+                        // Collapse
+                        content.classList.add('collapsed');
+                        icon.classList.add('collapsed');
+                        this.panelStates[chartId].collapsed = true;
+                        this.panelStates[chartId].enabled = false;
+                        if (status) status.classList.add('inactive');
+                    }
+                    
+                    this.saveState();
+                }
+            }
+            
+            isCollapsed(chartId) {
+                return this.panelStates[chartId]?.collapsed || false;
+            }
+            
+            isEnabled(chartId) {
+                return this.panelStates[chartId]?.enabled || false;
+            }
+            
+            saveState() {
+                try {
+                    localStorage.setItem('voicePracticeVisualizationState', JSON.stringify(this.panelStates));
+                } catch (e) {
+                    console.warn('Could not save visualization state:', e);
+                }
+            }
+            
+            loadState() {
+                try {
+                    const saved = localStorage.getItem('voicePracticeVisualizationState');
+                    if (saved) {
+                        const savedStates = JSON.parse(saved);
+                        this.panelStates = { ...this.panelStates, ...savedStates };
+                    }
+                } catch (e) {
+                    console.warn('Could not load visualization state:', e);
+                }
+                
+                // Apply loaded states to UI
+                setTimeout(() => this.applyStates(), 100);
+            }
+            
+            applyStates() {
+                for (const [chartId, state] of Object.entries(this.panelStates)) {
+                    const content = document.getElementById(`${chartId}-content`);
+                    const icon = document.getElementById(`${chartId}-icon`);
+                    const status = document.getElementById(`${chartId}-status`);
+                    
+                    if (content && icon) {
+                        if (state.collapsed) {
+                            content.classList.add('collapsed');
+                            icon.classList.add('collapsed');
+                            if (status) status.classList.add('inactive');
+                        } else {
+                            content.classList.remove('collapsed');
+                            icon.classList.remove('collapsed');
+                            if (status) status.classList.remove('inactive');
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Initialize visualization manager
+        const vizManager = new VisualizationManager();
+        
+        // Global function for panel toggling
+        function togglePanel(chartId) {
+            vizManager.togglePanel(chartId);
+        }
+        
+        // Spectrogram Canvas Implementation
+        class SpectrogramCanvas {
+            constructor(canvasId, width = 800, height = 300) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.width = width;
+                this.height = height;
+                this.canvas.width = width;
+                this.canvas.height = height;
+                
+                // Initialize buffers
+                this.spectrogramData = [];
+                this.maxColumns = Math.floor(width / 2); // 2 pixels per column
+                this.frequencyBins = 256; // Half of FFT size
+                this.maxFreq = 8000; // Display up to 8kHz
+                
+                // Color mapping
+                this.colorMap = this.createColorMap();
+                
+                // Initialize with black
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillRect(0, 0, width, height);
+                
+                // Draw frequency labels
+                this.drawFrequencyLabels();
+            }
+            
+            createColorMap() {
+                // Create a simple viridis-like colormap
+                const colors = [
+                    [68, 1, 84],    // Dark purple
+                    [59, 82, 139],  // Blue
+                    [33, 145, 140], // Teal
+                    [94, 201, 98],  // Green
+                    [253, 231, 37]  // Yellow
+                ];
+                
+                const colorMap = [];
+                for (let i = 0; i < 256; i++) {
+                    const t = i / 255;
+                    const segmentSize = 1 / (colors.length - 1);
+                    const segment = Math.floor(t / segmentSize);
+                    const localT = (t - segment * segmentSize) / segmentSize;
+                    
+                    const color1 = colors[Math.min(segment, colors.length - 2)];
+                    const color2 = colors[Math.min(segment + 1, colors.length - 1)];
+                    
+                    const r = Math.round(color1[0] + (color2[0] - color1[0]) * localT);
+                    const g = Math.round(color1[1] + (color2[1] - color1[1]) * localT);
+                    const b = Math.round(color1[2] + (color2[2] - color1[2]) * localT);
+                    
+                    colorMap.push([r, g, b]);
+                }
+                return colorMap;
+            }
+            
+            drawFrequencyLabels() {
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                this.ctx.font = '12px Arial';
+                this.ctx.textAlign = 'right';
+                
+                const freqLabels = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
+                freqLabels.forEach(freq => {
+                    const y = this.height - (freq / this.maxFreq) * this.height;
+                    this.ctx.fillText(`${freq}Hz`, this.width - 5, y);
+                });
+                
+                // Draw target ranges
+                this.drawTargetRanges();
+            }
+            
+            drawTargetRanges() {
+                // Pitch range (165-255 Hz)
+                const pitchMin = (165 / this.maxFreq) * this.height;
+                const pitchMax = (255 / this.maxFreq) * this.height;
+                this.ctx.fillStyle = 'rgba(255, 165, 0, 0.3)';
+                this.ctx.fillRect(0, this.height - pitchMax, this.width - 60, pitchMax - pitchMin);
+                
+                // Resonance range (2500-3500 Hz)
+                const resMin = (2500 / this.maxFreq) * this.height;
+                const resMax = (3500 / this.maxFreq) * this.height;
+                this.ctx.fillStyle = 'rgba(76, 175, 80, 0.3)';
+                this.ctx.fillRect(0, this.height - resMax, this.width - 60, resMax - resMin);
+            }
+            
+            updateSpectrogram(fftData) {
+                // Add new column of data
+                this.spectrogramData.push([...fftData]);
+                
+                // Remove old data if we have too many columns
+                if (this.spectrogramData.length > this.maxColumns) {
+                    this.spectrogramData.shift();
+                }
+                
+                // Redraw the entire spectrogram
+                this.redraw();
+            }
+            
+            redraw() {
+                // Clear canvas
+                this.ctx.fillStyle = 'black';
+                this.ctx.fillRect(0, 0, this.width, this.height);
+                
+                // Draw spectrogram data
+                const imageData = this.ctx.createImageData(this.width, this.height);
+                const data = imageData.data;
+                
+                for (let col = 0; col < this.spectrogramData.length; col++) {
+                    const x = Math.floor((col / this.maxColumns) * (this.width - 60));
+                    const spectrum = this.spectrogramData[col];
+                    
+                    for (let bin = 0; bin < Math.min(spectrum.length, this.frequencyBins); bin++) {
+                        const freq = (bin / this.frequencyBins) * this.maxFreq;
+                        if (freq > this.maxFreq) continue;
+                        
+                        const y = this.height - Math.floor((freq / this.maxFreq) * this.height);
+                        if (y < 0 || y >= this.height) continue;
+                        
+                        // Convert magnitude to color
+                        const magnitude = Math.min(255, Math.max(0, spectrum[bin] * 255));
+                        const colorIndex = Math.floor(magnitude);
+                        const color = this.colorMap[colorIndex];
+                        
+                        // Set pixel color
+                        const pixelIndex = (y * this.width + x) * 4;
+                        if (pixelIndex >= 0 && pixelIndex < data.length - 3) {
+                            data[pixelIndex] = color[0];     // R
+                            data[pixelIndex + 1] = color[1]; // G
+                            data[pixelIndex + 2] = color[2]; // B
+                            data[pixelIndex + 3] = 255;      // A
+                        }
+                    }
+                }
+                
+                this.ctx.putImageData(imageData, 0, 0);
+                
+                // Redraw labels and target ranges
+                this.drawFrequencyLabels();
+            }
+        }
+        
+        // Initialize spectrogram
+        let spectrogramCanvas = null;
+        
+        // Initialize spectrogram when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            spectrogramCanvas = new SpectrogramCanvas('spectrogramCanvas', 800, 300);
+        });
         
         // Chart setup
         const pitchChart = new Chart(document.getElementById('pitchChart'), {
@@ -292,11 +862,215 @@
             }
         });
         
+        // Resonance Chart
+        const resonanceChart = new Chart(document.getElementById('resonanceChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Resonance (Hz)',
+                    data: [],
+                    borderColor: '#E91E63',
+                    backgroundColor: 'rgba(233, 30, 99, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 1000,
+                        max: 5000
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            targetMin: {
+                                type: 'line',
+                                yMin: 2500,
+                                yMax: 2500,
+                                borderColor: '#4CAF50',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    content: 'Target Min',
+                                    enabled: true,
+                                    position: 'end'
+                                }
+                            },
+                            targetMax: {
+                                type: 'line',
+                                yMin: 3500,
+                                yMax: 3500,
+                                borderColor: '#4CAF50',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    content: 'Target Max',
+                                    enabled: true,
+                                    position: 'end'
+                                }
+                            },
+                            targetZone: {
+                                type: 'box',
+                                yMin: 2500,
+                                yMax: 3500,
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                borderColor: 'rgba(76, 175, 80, 0.3)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'white' }
+                    },
+                    y: {
+                        ticks: { color: 'white' }
+                    }
+                }
+            }
+        });
+        
+        // Intonation Chart
+        const intonationChart = new Chart(document.getElementById('intonationChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Intonation (Hz std)',
+                    data: [],
+                    borderColor: '#9C27B0',
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 50
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            targetMin: {
+                                type: 'line',
+                                yMin: 15,
+                                yMax: 15,
+                                borderColor: '#FFC107',
+                                borderWidth: 2,
+                                borderDash: [5, 5]
+                            },
+                            targetMax: {
+                                type: 'line',
+                                yMin: 25,
+                                yMax: 25,
+                                borderColor: '#FFC107',
+                                borderWidth: 2,
+                                borderDash: [5, 5]
+                            },
+                            targetZone: {
+                                type: 'box',
+                                yMin: 15,
+                                yMax: 25,
+                                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                borderColor: 'rgba(255, 193, 7, 0.3)',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: 'white' }
+                    },
+                    y: {
+                        ticks: { color: 'white' }
+                    }
+                }
+            }
+        });
+        
+        // Phoneme Scatter Chart
+        const phonemeChart = new Chart(document.getElementById('phonemeChart'), {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Phonemes',
+                    data: [],
+                    backgroundColor: 'rgba(63, 81, 181, 0.6)',
+                    borderColor: '#3F51B5',
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Resonance (Hz)',
+                            color: 'white'
+                        },
+                        min: 1000,
+                        max: 5000,
+                        ticks: { color: 'white' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Pitch (Hz)',
+                            color: 'white'
+                        },
+                        min: 50,
+                        max: 400,
+                        ticks: { color: 'white' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const point = context.parsed;
+                                return `Pitch: ${point.y.toFixed(1)} Hz, Resonance: ${point.x.toFixed(0)} Hz`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
         async function startRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 
                 audioContext = new AudioContext();
+                audioEngine.sampleRate = audioContext.sampleRate; // Update engine with actual sample rate
+                
                 const source = audioContext.createMediaStreamSource(stream);
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 2048;
@@ -304,6 +1078,7 @@
                 source.connect(analyser);
                 
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
+                timeDataArray = new Uint8Array(analyser.fftSize);
                 
                 isRecording = true;
                 document.getElementById('startBtn').disabled = true;
@@ -334,72 +1109,117 @@
         function analyzeAudio() {
             if (!analyser) return;
             
+            // Get both frequency and time domain data
             analyser.getByteFrequencyData(dataArray);
+            analyser.getByteTimeDomainData(timeDataArray);
             
-            // Simple volume calculation
-            const volume = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length / 255;
+            // Use enhanced audio engine for comprehensive analysis
+            const analysisResult = audioEngine.analyzeAudio(timeDataArray, dataArray);
             
-            // Simple pitch estimation (this is very basic - real pitch detection is complex)
-            const pitch = estimatePitch(dataArray);
+            // Update UI with enhanced data
+            document.getElementById('currentPitch').textContent = analysisResult.pitch.toFixed(1);
+            document.getElementById('currentVolume').textContent = analysisResult.volume.toFixed(3);
             
-            // Update UI
-            document.getElementById('currentPitch').textContent = pitch.toFixed(1);
-            document.getElementById('currentVolume').textContent = volume.toFixed(3);
+            // Update current values in info panels
+            const currentResonanceSpans = document.querySelectorAll('#currentResonance');
+            currentResonanceSpans.forEach(span => {
+                span.textContent = analysisResult.resonance.toFixed(0);
+            });
+            
+            const currentIntonationSpans = document.querySelectorAll('#currentIntonation');
+            currentIntonationSpans.forEach(span => {
+                span.textContent = analysisResult.intonation.toFixed(1);
+            });
             
             // Add to charts
             const now = new Date().toLocaleTimeString();
             
-            if (pitchChart.data.labels.length > 50) {
-                pitchChart.data.labels.shift();
-                pitchChart.data.datasets[0].data.shift();
+            // Update all charts only if they're enabled (not collapsed)
+            if (vizManager.isEnabled('pitch')) {
+                if (pitchChart.data.labels.length > 50) {
+                    pitchChart.data.labels.shift();
+                    pitchChart.data.datasets[0].data.shift();
+                }
+                pitchChart.data.labels.push(now);
+                pitchChart.data.datasets[0].data.push(analysisResult.pitch);
+                pitchChart.update('none');
             }
             
-            if (volumeChart.data.labels.length > 50) {
-                volumeChart.data.labels.shift();
-                volumeChart.data.datasets[0].data.shift();
+            if (vizManager.isEnabled('volume')) {
+                if (volumeChart.data.labels.length > 50) {
+                    volumeChart.data.labels.shift();
+                    volumeChart.data.datasets[0].data.shift();
+                }
+                volumeChart.data.labels.push(now);
+                volumeChart.data.datasets[0].data.push(analysisResult.volume);
+                volumeChart.update('none');
             }
             
-            pitchChart.data.labels.push(now);
-            pitchChart.data.datasets[0].data.push(pitch);
-            pitchChart.update('none');
+            if (vizManager.isEnabled('resonance')) {
+                if (resonanceChart.data.labels.length > 50) {
+                    resonanceChart.data.labels.shift();
+                    resonanceChart.data.datasets[0].data.shift();
+                }
+                resonanceChart.data.labels.push(now);
+                resonanceChart.data.datasets[0].data.push(analysisResult.resonance);
+                resonanceChart.update('none');
+            }
             
-            volumeChart.data.labels.push(now);
-            volumeChart.data.datasets[0].data.push(volume);
-            volumeChart.update('none');
+            if (vizManager.isEnabled('intonation')) {
+                if (intonationChart.data.labels.length > 50) {
+                    intonationChart.data.labels.shift();
+                    intonationChart.data.datasets[0].data.shift();
+                }
+                intonationChart.data.labels.push(now);
+                intonationChart.data.datasets[0].data.push(analysisResult.intonation);
+                intonationChart.update('none');
+            }
             
-            // Send data to server
+            // Update phoneme scatter plot if enabled and phoneme detected
+            if (vizManager.isEnabled('phonemes') && analysisResult.phoneme && analysisResult.phoneme.phoneme !== 'silence') {
+                const phonemeData = phonemeChart.data.datasets[0].data;
+                phonemeData.push({
+                    x: analysisResult.resonance,
+                    y: analysisResult.pitch,
+                    phoneme: analysisResult.phoneme.phoneme,
+                    confidence: analysisResult.phoneme.confidence
+                });
+                
+                // Keep only last 50 phonemes
+                if (phonemeData.length > 50) {
+                    phonemeData.shift();
+                }
+                
+                phonemeChart.update('none');
+                
+                // Update phoneme count
+                document.getElementById('phonemeCount').textContent = phonemeData.length;
+            }
+            
+            // Update spectrogram if enabled
+            if (vizManager.isEnabled('spectrogram') && spectrogramCanvas) {
+                spectrogramCanvas.updateSpectrogram(analysisResult.spectrum);
+            }
+            
+            // Send enhanced data to server
             fetch('/api/voice-data', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    pitch: pitch,
-                    volume: volume
+                    pitch: analysisResult.pitch,
+                    volume: analysisResult.volume,
+                    resonance: analysisResult.resonance,
+                    intonation: analysisResult.intonation,
+                    phoneme: analysisResult.phoneme,
+                    isVoiced: analysisResult.isVoiced,
+                    confidence: analysisResult.confidence
                 })
             });
         }
         
-        function estimatePitch(frequencyData) {
-            // Very basic pitch estimation - finds the frequency bin with highest amplitude
-            // This is not accurate but gives a rough idea
-            let maxIndex = 0;
-            let maxValue = 0;
-            
-            for (let i = 1; i < frequencyData.length / 4; i++) {
-                if (frequencyData[i] > maxValue) {
-                    maxValue = frequencyData[i];
-                    maxIndex = i;
-                }
-            }
-            
-            // Convert bin index to frequency
-            const sampleRate = audioContext.sampleRate;
-            const frequency = (maxIndex * sampleRate) / (analyser.fftSize * 2);
-            
-            // Return a reasonable pitch value (basic filtering)
-            return Math.max(50, Math.min(400, frequency));
-        }
+
         
         function clearData() {
             pitchChart.data.labels = [];
