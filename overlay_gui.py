@@ -3,6 +3,7 @@ import pyqtgraph as pg
 import sounddevice as sd
 import numpy as np
 import os
+import traceback
 
 from spectrogram_visualisation import SpectrogramWidget
 from pitch_analysis import get_pitch_score, get_latest_pitch
@@ -10,11 +11,12 @@ from resonance_analysis import get_resonance_score, get_latest_centroid
 from intonation_analysis import get_intonation_score, get_latest_std
 from audio_stream import set_volume_threshold
 from phoneme_scatter_plot import PhonemeScatterPlotWidget
+from config_manager import config
 # result_queue will be passed to the class at runtime
 
 
-SAMPLE_RATE = 10
-MAX_HISTORY = SAMPLE_RATE * 10
+SAMPLE_RATE = config.get('gui.max_history', 100) // 10
+MAX_HISTORY = config.get('gui.max_history', 100)
 
 class VoicePracticeOverlay(QtWidgets.QWidget):
     def __init__(self, result_queue):
@@ -118,11 +120,11 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.time_history = np.linspace(-10, 0, MAX_HISTORY).tolist()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_indicators)
-        self.timer.start(100)
+        self.timer.start(config.get('gui.update_interval_ms', 100))
 
         self.poll_timer = QtCore.QTimer()
         self.poll_timer.timeout.connect(self.poll_results)
-        self.poll_timer.start(200)
+        self.poll_timer.start(config.get('gui.poll_interval_ms', 200))
 
     def toggle_spectrogram(self, state):
         self.spectrogram.setVisible(bool(state))
@@ -135,43 +137,59 @@ class VoicePracticeOverlay(QtWidgets.QWidget):
         self.latest_volume = value
 
     def update_indicators(self):
-        pitch = get_latest_pitch()
-        pitch_score = get_pitch_score()
-        res_score = get_resonance_score()
-        centroid = get_latest_centroid()
-        into_score = get_intonation_score()
-        std_dev = get_latest_std()
+        try:
+            pitch = get_latest_pitch()
+            pitch_score = get_pitch_score()
+            res_score = get_resonance_score()
+            centroid = get_latest_centroid()
+            into_score = get_intonation_score()
+            std_dev = get_latest_std()
 
-        threshold = self.volume_slider.value()
-        input_level = self.latest_volume
-        is_silent = input_level < threshold
+            threshold = self.volume_slider.value()
+            input_level = self.latest_volume
+            is_silent = input_level < threshold
 
-        self.volume_bar.setValue(input_level)
-        self.volume_bar.setStyleSheet(f"QProgressBar::chunk {{ background-color: {'green' if not is_silent else 'gold'}; }}")
+            self.volume_bar.setValue(input_level)
+            self.volume_bar.setStyleSheet(f"QProgressBar::chunk {{ background-color: {'green' if not is_silent else 'gold'}; }}")
 
-        if self.spectrogram.isVisible():
-            self.spectrogram.update_spectrogram(audio_frame=np.zeros(1024), is_silent=is_silent)
+            if self.spectrogram.isVisible():
+                self.spectrogram.update_spectrogram(audio_frame=np.zeros(1024), is_silent=is_silent)
 
-        self.pitch_plot.setTitle(f"Pitch (Hz) — {pitch_score:.1f}% | {pitch:.1f} Hz")
-        self.resonance_plot.setTitle(f"Resonance — {res_score:.1f}% | {centroid:.0f} Hz")
-        self.intonation_plot.setTitle(f"Intonation — {into_score:.1f}% | {std_dev:.1f} Hz")
+            # Handle NaN values gracefully
+            pitch_display = pitch if not np.isnan(pitch) else 0.0
+            centroid_display = centroid if not np.isnan(centroid) else 0.0
+            std_display = std_dev if not np.isnan(std_dev) else 0.0
 
-        self.pitch_history.pop(0)
-        self.pitch_history.append(pitch if not is_silent else np.nan)
-        self.pitch_curve.setData(self.time_history, self.pitch_history)
+            self.pitch_plot.setTitle(f"Pitch (Hz) — {pitch_score:.1f}% | {pitch_display:.1f} Hz")
+            self.resonance_plot.setTitle(f"Resonance — {res_score:.1f}% | {centroid_display:.0f} Hz")
+            self.intonation_plot.setTitle(f"Intonation — {into_score:.1f}% | {std_display:.1f} Hz")
 
-        self.resonance_history.pop(0)
-        self.resonance_history.append(centroid if not is_silent else np.nan)
-        self.resonance_curve.setData(self.time_history, self.resonance_history)
+            self.pitch_history.pop(0)
+            self.pitch_history.append(pitch if not is_silent else np.nan)
+            self.pitch_curve.setData(self.time_history, self.pitch_history)
 
-        self.intonation_std_history.pop(0)
-        self.intonation_std_history.append(std_dev if not is_silent else np.nan)
-        self.intonation_curve.setData(self.time_history, self.intonation_std_history)
+            self.resonance_history.pop(0)
+            self.resonance_history.append(centroid if not is_silent else np.nan)
+            self.resonance_curve.setData(self.time_history, self.resonance_history)
+
+            self.intonation_std_history.pop(0)
+            self.intonation_std_history.append(std_dev if not is_silent else np.nan)
+            self.intonation_curve.setData(self.time_history, self.intonation_std_history)
+            
+        except Exception as e:
+            print(f"[GUI] Error updating indicators: {e}")
+            if config.get_setting('dev', False):
+                traceback.print_exc()
 
     def poll_results(self):
-        if not self.result_queue.empty():
-            result = self.result_queue.get()
-            self.scatter_plot.update_plot(result['phonemes'], result['medianPitch'], result['medianResonance'])
+        try:
+            if not self.result_queue.empty():
+                result = self.result_queue.get()
+                self.scatter_plot.update_plot(result['phonemes'], result['medianPitch'], result['medianResonance'])
+        except Exception as e:
+            print(f"[GUI] Error polling results: {e}")
+            if config.get_setting('dev', False):
+                traceback.print_exc()
 
     def get_spectrogram_updater(self):
         def conditional_update(audio, is_silent=False):

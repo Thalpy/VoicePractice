@@ -1,11 +1,12 @@
 import numpy as np
 import time
+from config_manager import config
 
 # === Resonance Tracking (Spectral Centroid Proxy) ===
-SAMPLE_RATE = 22050
-ROLLING_WINDOW_SECONDS = 60
-TARGET_CENTROID_MIN = 2500  # Hz
-TARGET_CENTROID_MAX = 3500  # Hz
+SAMPLE_RATE = config.get('audio.sample_rate', 22050)
+ROLLING_WINDOW_SECONDS = config.get('resonance.rolling_window_seconds', 60)
+TARGET_CENTROID_MIN = config.get('resonance.target_centroid_min', 2500)  # Hz
+TARGET_CENTROID_MAX = config.get('resonance.target_centroid_max', 3500)  # Hz
 
 _resonance_buffer = []  # List of (timestamp, in_range)
 _latest_centroid = np.nan

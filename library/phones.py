@@ -1,4 +1,5 @@
 import re
+import os
 
 def parse(praat_output):
 	word_lines = []
@@ -18,10 +19,15 @@ def parse(praat_output):
 	data = {}
 
 	pronunciation_dict = {}
-	with open('cmudict.txt', 'r', encoding='iso-8859-1') as f:
-		for line in f.readlines():
-			cols = line.split()
-			pronunciation_dict[cols[0]] = cols[1:]
+	cmudict_path = 'cmudict.txt'
+	if os.path.exists(cmudict_path):
+		with open(cmudict_path, 'r', encoding='iso-8859-1') as f:
+			for line in f.readlines():
+				cols = line.split()
+				if len(cols) > 1:
+					pronunciation_dict[cols[0]] = cols[1:]
+	else:
+		print(f"[Warning] CMU Dictionary not found at {cmudict_path}. Phoneme analysis will be limited.")
 
 	data['words'] = []
 	for line in word_lines:

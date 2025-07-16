@@ -1,12 +1,13 @@
 import numpy as np
 import time
 import librosa
+from config_manager import config
 
 # === Pitch Tracking Configuration ===
-SAMPLE_RATE = 22050
-TARGET_MIN = 165.0  # Hz (cis female range lower bound)
-TARGET_MAX = 255.0  # Hz (cis female range upper bound)
-ROLLING_WINDOW_SECONDS = 60
+SAMPLE_RATE = config.get('audio.sample_rate', 22050)
+TARGET_MIN = config.get('pitch.target_min', 165.0)  # Hz (cis female range lower bound)
+TARGET_MAX = config.get('pitch.target_max', 255.0)  # Hz (cis female range upper bound)
+ROLLING_WINDOW_SECONDS = config.get('pitch.rolling_window_seconds', 60)
 
 _pitch_buffer = []  # List of (timestamp, pitch)
 

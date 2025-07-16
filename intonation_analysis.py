@@ -1,11 +1,12 @@
 import numpy as np
 import time
+from config_manager import config
 
 # === Intonation Detection (Pitch Variation) ===
-ROLLING_WINDOW_SECONDS = 60
-WINDOW_DURATION = 5.0  # seconds
-INTONATION_MIN_STD = 15.0  # Hz
-INTONATION_MAX_STD = 25.0  # Hz
+ROLLING_WINDOW_SECONDS = config.get('intonation.rolling_window_seconds', 60)
+WINDOW_DURATION = config.get('intonation.window_duration', 5.0)  # seconds
+INTONATION_MIN_STD = config.get('intonation.min_std', 15.0)  # Hz
+INTONATION_MAX_STD = config.get('intonation.max_std', 25.0)  # Hz
 MIN_PITCH = 50.0
 
 _pitch_history = []          # (timestamp, pitch)

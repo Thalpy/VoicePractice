@@ -10,7 +10,7 @@ settings = settings_module.settings
 def process(uploaded_file, transcript, tmp_dir):
 	################## Noise Removal ##################
 
-	os.mkdir(tmp_dir)
+	os.makedirs(tmp_dir, exist_ok=True)
 
 	input_file    = tmp_dir + '/orig'
 	format_file   = tmp_dir + '/format.wav'
@@ -58,7 +58,8 @@ def process(uploaded_file, transcript, tmp_dir):
 		])
 
 		assert(os.path.exists(clean_file))
-	except e:
+	except Exception as e:
+		print(f"[Preprocessing] Audio cleaning failed: {e}")
 		clean_file = input_file
 
 	################## Forced Alignment ##################
