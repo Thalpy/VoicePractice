@@ -1,126 +1,211 @@
 # Voice Practice - Real-time Voice Analysis Tool
 
-A sophisticated real-time voice analysis application designed for voice training and feminization practice. Features live pitch tracking, resonance analysis, intonation monitoring, and phoneme visualization.
+A sophisticated voice analysis application designed for voice training and feminization practice. Available as both a desktop application and web-based tool.
 
-## Features
+## 🚀 Quick Start
 
-- **Real-time Audio Analysis**: Live pitch, resonance, and intonation tracking
-- **Visual Feedback**: Interactive plots showing voice metrics over time
-- **Phoneme Analysis**: Speech-to-text with detailed phoneme breakdown
-- **Spectrogram Visualization**: Real-time frequency analysis
-- **Configurable Targets**: Customizable pitch and resonance ranges
-- **Overlay GUI**: Draggable, always-on-top interface
-- **Hotkey Support**: Toggle visibility with Ctrl+Shift+V
+### Option 1: Web Version (Recommended for beginners)
+```bash
+python web_app.py
+```
+Then open http://localhost:5000 in your browser.
 
-## Installation
+### Option 2: Desktop Application (Full features)
+```bash
+# First, run diagnostics and install dependencies
+python diagnose_and_fix.py
 
-### Prerequisites
+# If dependencies are missing, run:
+python setup_fixed.py
+
+# Then start the application
+python main.py
+```
+
+## 📋 Prerequisites
 
 - Python 3.8 or higher
 - A working microphone
 - Windows, macOS, or Linux
 
-### Setup
+## 🔧 Installation & Setup
 
-1. Clone or download this repository
-2. Install dependencies:
+### Automated Setup (Recommended)
+
+1. **Run the diagnostic tool:**
    ```bash
-   pip install -r requirements.txt
+   python diagnose_and_fix.py
    ```
 
-3. Run the application:
+2. **Install dependencies if needed:**
    ```bash
-   python main.py
+   python setup_fixed.py
    ```
 
-### Optional Dependencies
+3. **Start the application:**
+   ```bash
+   python main.py          # Desktop version
+   # OR
+   python web_app.py       # Web version
+   ```
 
-For advanced phoneme analysis, you may need additional tools:
-- **Montreal Forced Alignment (MFA)**: For detailed phoneme timing
-- **Praat**: For formant analysis
-- **CMU Pronouncing Dictionary**: For phoneme expectations
+### Manual Setup
 
-## Configuration
-
-The application uses two configuration files:
-
-### config.json
-Main application settings including audio parameters, target ranges, and GUI settings.
-
-### settings.json
-User preferences including development mode, logging, and file paths.
-
-## Usage
-
-1. **Start the Application**: Run `python main.py`
-2. **Adjust Microphone Sensitivity**: Use the volume slider to set the detection threshold
-3. **Monitor Your Voice**: Speak and watch the real-time feedback
-4. **Toggle Visibility**: Press Ctrl+Shift+V to hide/show the overlay
-5. **View Spectrograms**: Check the "Show Spectrogram" option for frequency analysis
-
-### Understanding the Metrics
-
-- **Pitch**: Fundamental frequency in Hz (target: 165-255 Hz for feminine voice)
-- **Resonance**: Spectral centroid indicating vocal tract resonance
-- **Intonation**: Pitch variation indicating natural speech patterns
-- **Phoneme Plot**: Scatter plot showing individual sound characteristics
-
-## Calibration
-
-Use the calibration module to practice with example audio:
+If the automated setup doesn't work:
 
 ```bash
-python calibration.py
+# Install core dependencies
+pip install numpy scipy
+
+# Install audio libraries
+pip install sounddevice librosa soundfile
+
+# Install GUI libraries (for desktop version)
+pip install PyQt5 pyqtgraph matplotlib
+
+# Install ML libraries (for advanced features)
+pip install torch torchaudio openai-whisper
+
+# Install utilities
+pip install keyboard flask
 ```
 
-## Development
+## 🎯 Features
 
-### Project Structure
+### Desktop Application
+- **Real-time Audio Analysis**: Live pitch, resonance, and intonation tracking
+- **Advanced Visualizations**: Spectrograms, phoneme plots, real-time waveforms
+- **Speech Recognition**: Detailed phoneme breakdown using OpenAI Whisper
+- **Overlay GUI**: Always-on-top, draggable interface
+- **Hotkey Support**: Toggle visibility with Ctrl+Shift+V
+- **Configurable Targets**: Customizable pitch and resonance ranges
 
-- `main.py`: Application entry point
-- `overlay_gui.py`: Main GUI interface
-- `live_analysis_system.py`: Real-time audio processing
-- `config_manager.py`: Configuration management
-- `pitch_analysis.py`: Pitch tracking algorithms
-- `resonance_analysis.py`: Spectral analysis
-- `intonation_analysis.py`: Pitch variation analysis
-- `library/`: Core processing modules
+### Web Application
+- **Browser-based**: No complex installation required
+- **Real-time Pitch Tracking**: Live frequency analysis
+- **Volume Monitoring**: Audio level detection
+- **Interactive Charts**: Visual feedback with Chart.js
+- **Session Statistics**: Track your progress over time
+- **Mobile Friendly**: Works on tablets and phones
 
-### Contributing
+## 📊 Understanding the Metrics
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- **Pitch**: Fundamental frequency in Hz
+  - Feminine target: 165-255 Hz
+  - Masculine range: 85-180 Hz
+- **Volume**: Audio amplitude (0.0-1.0)
+- **Resonance**: Spectral centroid indicating vocal tract characteristics
+- **Intonation**: Pitch variation patterns
 
-## Troubleshooting
+## 🎮 Usage
+
+### Desktop Version
+1. Start with `python main.py`
+2. Adjust microphone sensitivity using the volume slider
+3. Speak and monitor real-time feedback
+4. Use Ctrl+Shift+V to toggle overlay visibility
+5. Enable spectrogram view for detailed frequency analysis
+
+### Web Version
+1. Start with `python web_app.py`
+2. Open http://localhost:5000 in your browser
+3. Click "Start Analysis" and allow microphone access
+4. Speak and watch the live charts update
+5. View session statistics in real-time
+
+## ⚙️ Configuration
+
+### config.json
+Main application settings:
+```json
+{
+  "pitch": {
+    "target_min": 165.0,
+    "target_max": 255.0
+  },
+  "audio": {
+    "sample_rate": 22050,
+    "buffer_size": 1024
+  }
+}
+```
+
+### settings.json
+User preferences:
+```json
+{
+  "dev": true,
+  "logs": "./logs/",
+  "recordings": "./rec/"
+}
+```
+
+## 🛠️ Troubleshooting
 
 ### Common Issues
 
-1. **No audio input**: Check microphone permissions and default audio device
-2. **High CPU usage**: Reduce buffer size or update interval in config.json
-3. **Whisper errors**: Ensure torch and torchaudio are properly installed
-4. **GUI not responding**: Check PyQt5 installation and display settings
+1. **Missing Dependencies**
+   ```bash
+   python diagnose_and_fix.py
+   ```
+
+2. **No Audio Input**
+   - Check microphone permissions
+   - Verify default audio device
+   - Test with `python -c "import sounddevice; print(sounddevice.query_devices())"`
+
+3. **Web App Not Loading**
+   - Ensure Flask is installed: `pip install flask`
+   - Check if port 5000 is available
+   - Try a different port: `python web_app.py --port 8080`
+
+4. **High CPU Usage**
+   - Reduce buffer size in config.json
+   - Lower update frequency
+   - Close other audio applications
 
 ### Debug Mode
 
-Enable debug mode in settings.json:
+Enable detailed logging in settings.json:
 ```json
 {
   "dev": true
 }
 ```
 
-This will show additional logging information and error details.
+## 🏗️ Project Structure
 
-## License
+```
+VoicePractice/
+├── main.py                 # Desktop app entry point
+├── web_app.py             # Web app entry point
+├── diagnose_and_fix.py    # Diagnostic tool
+├── setup_fixed.py         # Automated setup
+├── config.json            # Application configuration
+├── settings.json          # User preferences
+├── overlay_gui.py         # Desktop GUI
+├── live_analysis_system.py # Real-time processing
+├── templates/             # Web app templates
+├── library/               # Core processing modules
+└── logs/                  # Application logs
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes
+4. Test with both desktop and web versions
+5. Submit a pull request
+
+## 📄 License
 
 See LICENSE file for details.
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - OpenAI Whisper for speech recognition
 - librosa for audio analysis
-- PyQt5 for the GUI framework
-- Montreal Forced Alignment project for phoneme timing
+- PyQt5 for desktop GUI
+- Chart.js for web visualizations
+- Flask for web framework

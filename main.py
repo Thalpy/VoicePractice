@@ -1,6 +1,44 @@
 import sys
 import os
 import traceback
+
+def check_dependencies():
+    """Check if all required dependencies are available"""
+    missing_deps = []
+    
+    try:
+        from PyQt5 import QtWidgets, QtCore
+    except ImportError:
+        missing_deps.append("PyQt5")
+    
+    try:
+        import keyboard
+    except ImportError:
+        missing_deps.append("keyboard")
+    
+    try:
+        import sounddevice
+    except ImportError:
+        missing_deps.append("sounddevice")
+    
+    try:
+        import librosa
+    except ImportError:
+        missing_deps.append("librosa")
+    
+    if missing_deps:
+        print("Missing required dependencies:")
+        for dep in missing_deps:
+            print(f"  - {dep}")
+        print("\nPlease run: python setup_fixed.py")
+        return False
+    
+    return True
+
+if not check_dependencies():
+    sys.exit(1)
+
+# Import after dependency check
 from PyQt5 import QtWidgets, QtCore
 import keyboard
 

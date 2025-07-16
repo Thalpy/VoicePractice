@@ -1,5 +1,5 @@
 {
-	"dev"        : true,
-	"logs"       : "/logs/",
-	"recordings" : "/rec/"
+  "dev": true,
+  "logs": "./logs/",
+  "recordings": "./rec/"
 }
