@@ -65,7 +65,8 @@
   - _Requirements: 2.1, 2.3, 2.4, 6.1_
 
 - [ ] 5. Create real-time spectrogram visualization
-- [-] 5.1 Implement FFT analysis pipeline
+- [x] 5.1 Implement FFT analysis pipeline
+
 
   - Set up 2048-sample FFT processing for frequency resolution
   - Create efficient spectrum calculation with 30 FPS updates
@@ -86,12 +87,15 @@
   - Add frame rate monitoring and adaptive rendering
   - _Requirements: 3.5, 6.2, 6.4_
 
+
 - [ ] 6. Create phoneme scatter plot visualization
 - [ ] 6.1 Implement basic phoneme detection
   - Create simplified formant-based phoneme classification
   - Implement pitch-resonance mapping for common phonemes
   - Add confidence scoring for phoneme detection accuracy
   - Create fallback handling when speech recognition is unavailable
+
+
   - _Requirements: 4.2, 4.5, 5.4_
 
 - [ ] 6.2 Build scatter plot Chart.js component
