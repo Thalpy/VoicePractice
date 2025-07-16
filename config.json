@@ -1,0 +1,33 @@
+{
+  "audio": {
+    "sample_rate": 22050,
+    "buffer_size": 1024,
+    "channels": 1
+  },
+  "pitch": {
+    "target_min": 165.0,
+    "target_max": 255.0,
+    "rolling_window_seconds": 60
+  },
+  "resonance": {
+    "target_centroid_min": 2500,
+    "target_centroid_max": 3500,
+    "rolling_window_seconds": 60
+  },
+  "intonation": {
+    "min_std": 15.0,
+    "max_std": 25.0,
+    "window_duration": 5.0,
+    "rolling_window_seconds": 60
+  },
+  "gui": {
+    "max_history": 100,
+    "update_interval_ms": 100,
+    "poll_interval_ms": 200
+  },
+  "analysis": {
+    "buffer_duration": 5,
+    "min_clip_duration": 1,
+    "volume_threshold": 0.02
+  }
+}

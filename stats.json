@@ -1,0 +1,44 @@
+{
+  "AA": [
+    {"mean": 730, "stdev": 80, "median": 725, "max": 900, "min": 600},
+    {"mean": 1090, "stdev": 120, "median": 1085, "max": 1300, "min": 900},
+    {"mean": 2440, "stdev": 200, "median": 2435, "max": 2800, "min": 2100},
+    {"mean": 3300, "stdev": 250, "median": 3295, "max": 3700, "min": 2900}
+  ],
+  "AE": [
+    {"mean": 660, "stdev": 70, "median": 655, "max": 800, "min": 520},
+    {"mean": 1720, "stdev": 150, "median": 1715, "max": 2000, "min": 1450},
+    {"mean": 2410, "stdev": 180, "median": 2405, "max": 2750, "min": 2100},
+    {"mean": 3300, "stdev": 240, "median": 3295, "max": 3650, "min": 2950}
+  ],
+  "AH": [
+    {"mean": 730, "stdev": 85, "median": 725, "max": 900, "min": 580},
+    {"mean": 1090, "stdev": 130, "median": 1085, "max": 1350, "min": 850},
+    {"mean": 2440, "stdev": 210, "median": 2435, "max": 2850, "min": 2050},
+    {"mean": 3300, "stdev": 260, "median": 3295, "max": 3750, "min": 2850}
+  ],
+  "IH": [
+    {"mean": 390, "stdev": 40, "median": 385, "max": 470, "min": 310},
+    {"mean": 1990, "stdev": 180, "median": 1985, "max": 2300, "min": 1700},
+    {"mean": 2550, "stdev": 200, "median": 2545, "max": 2900, "min": 2200},
+    {"mean": 3300, "stdev": 250, "median": 3295, "max": 3700, "min": 2900}
+  ],
+  "IY": [
+    {"mean": 270, "stdev": 30, "median": 265, "max": 330, "min": 210},
+    {"mean": 2290, "stdev": 200, "median": 2285, "max": 2650, "min": 1950},
+    {"mean": 3010, "stdev": 220, "median": 3005, "max": 3400, "min": 2600},
+    {"mean": 3300, "stdev": 240, "median": 3295, "max": 3650, "min": 2950}
+  ],
+  "UH": [
+    {"mean": 440, "stdev": 50, "median": 435, "max": 540, "min": 340},
+    {"mean": 1020, "stdev": 110, "median": 1015, "max": 1200, "min": 840},
+    {"mean": 2240, "stdev": 190, "median": 2235, "max": 2600, "min": 1900},
+    {"mean": 3300, "stdev": 250, "median": 3295, "max": 3700, "min": 2900}
+  ],
+  "UW": [
+    {"mean": 300, "stdev": 35, "median": 295, "max": 370, "min": 230},
+    {"mean": 870, "stdev": 90, "median": 865, "max": 1050, "min": 690},
+    {"mean": 2240, "stdev": 180, "median": 2235, "max": 2580, "min": 1900},
+    {"mean": 3300, "stdev": 240, "median": 3295, "max": 3650, "min": 2950}
+  ]
+}

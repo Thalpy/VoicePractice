@@ -1,8 +1,22 @@
-sounddevice>=0.4.6          # Real-time mic input
-librosa>=0.10               # Pitch tracking (yin), STFT, audio analysis
-numpy>=1.23                 # Signal processing, arrays
-scipy>=1.9                  # FFTs, filters
-matplotlib>=3.5             # Optional: visualizing spectrograms
-pyqt5>=5.15                 # GUI overlay
-pyqtgraph>=0.13             # Real-time waveform and spectrogram UI
-keyboard>=0.13              # Hotkey support (for calibration/test toggles)
+# Core dependencies
+numpy>=1.23,<2.0
+scipy>=1.9,<2.0
+setuptools>=65.0
+
+# Audio processing
+sounddevice>=0.4.6,<1.0     # Real-time mic input
+librosa>=0.10,<1.0          # Pitch tracking (yin), STFT, audio analysis
+soundfile>=0.12,<1.0        # Audio file I/O
+
+# GUI framework
+PyQt5>=5.15,<6.0            # GUI overlay
+pyqtgraph>=0.13,<1.0        # Real-time waveform and spectrogram UI
+matplotlib>=3.5,<4.0        # Visualizing spectrograms
+
+# Machine Learning
+torch>=2.0,<3.0             # Required for Whisper
+torchaudio>=2.0,<3.0        # Audio processing for PyTorch
+openai-whisper>=20231117    # Speech recognition
+
+# Utilities
+keyboard>=0.13,<1.0         # Hotkey support (for calibration/test toggles)
