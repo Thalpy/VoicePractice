@@ -60,14 +60,26 @@ def create_default_config():
     
     # Check if config.json exists and is valid
     if not os.path.exists('config.json'):
+        print("✗ config.json is missing. Creating default config.json...")
+        with open('config.json', 'w') as f:
+            json.dump({"setting1": "value1", "setting2": "value2"}, f, indent=4)
+    else:
         print("✓ config.json already exists")
     
     # Check if settings.json exists and is valid
     if not os.path.exists('settings.json'):
+        print("✗ settings.json is missing. Creating default settings.json...")
+        with open('settings.json', 'w') as f:
+            json.dump({"option1": True, "option2": False}, f, indent=4)
+    else:
         print("✓ settings.json already exists")
     
     # Check if stats.json exists
     if not os.path.exists('stats.json'):
+        print("✗ stats.json is missing. Creating default stats.json...")
+        with open('stats.json', 'w') as f:
+            json.dump({"stat1": 0, "stat2": 0}, f, indent=4)
+    else:
         print("✓ stats.json already exists")
 
 def test_audio():
